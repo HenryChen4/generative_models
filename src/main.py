@@ -57,6 +57,16 @@ def get_model_config(config_name):
                 "activation": nn.ELU
             },
             "type": "ffj"
+        },
+        "arm_100d_cnf_ffj": {
+            "solution_dim": 100,
+            "sigma": torch.pi/3,
+            "num_context": 3,
+            "hypernet_config": {
+                "hidden_features": (1024, 1024, 1024),
+                "activation": nn.ELU
+            },
+            "type": "ffj"
         }
     }
     return models[config_name]
