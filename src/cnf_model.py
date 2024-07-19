@@ -26,7 +26,6 @@ def distill_archive_cnf(cnf,
                         optimizer,
                         learning_rate,
                         device):
-    print(device)
     cnf.to(device)
     optimizer = optimizer(cnf.parameters(), lr=learning_rate)
 
@@ -50,10 +49,10 @@ def distill_archive_cnf(cnf,
             # calculating l2 norm between features
             generated_solution = cnf(original_context).sample().to(device)
             _, generated_features = meas_obj_func(generated_solution)
-            all_feature_err = torch.norm(generated_features - original_features,
+            batched_feature_err = torch.norm(generated_features - original_features,
                                          p=2,
                                          dim=1)
-            mean_feature_err = all_feature_err.mean().to(device)
+            mean_feature_err = batched_feature_err.mean().to(device)
             feature_err += mean_feature_err
 
             # backpropagation
