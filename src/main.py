@@ -9,6 +9,7 @@ from ranger_adabelief import RangerAdaBelief as Ranger
 
 from src.data import gather_solutions
 from src.nfn_model import create_nfn, distill_archive_nfn
+from src.cnf_model import create_cnf, distill_archive_cnf
 from src.domains import DOMAIN_CONFIGS, arm, sphere
 
 def get_qd_config(config_name):
@@ -36,6 +37,14 @@ def get_model_config(config_name):
                 "activation": nn.LeakyReLU
             },
             "permute_seed": 41534
+        },
+        "arm_10d_cnf": {
+            "solution_dim": 10,
+            "num_context": 3,
+            "hypernet_config": {
+                "hidden_features": (1024, 1024, 1024),
+                "activation": nn.ELU
+            }
         }
     }
     return models[config_name]
@@ -63,7 +72,7 @@ def main(domain_name,
     if "nfn" in model_config_name:
         archive_model = create_nfn(**algo_config)
     elif "cnf" in model_config_name:
-        pass
+        archive_model = create_cnf(**algo_config)
     
     # 3. train flow model
     optimizer = None
@@ -85,7 +94,13 @@ def main(domain_name,
                                                               learning_rate=learning_rate,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
     elif "cnf" in model_config_name:
-        pass
+        all_epoch_loss, all_feature_err = distill_archive_cnf(nfn=archive_model,
+                                                              train_loader=train_loader,
+                                                              meas_obj_func=domain_config["obj_meas_func"],
+                                                              num_iters=num_training_iters,
+                                                              optimizer=optimizer,
+                                                              learning_rate=learning_rate,
+                                                              device="cuda" if torch.cuda.is_available() else "cpu")
 
     # 4. save results
     cpu_epoch_loss = []
