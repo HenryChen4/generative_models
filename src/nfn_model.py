@@ -77,6 +77,9 @@ def distill_archive_nfn(nfn,
         all_epoch_loss (list): List of all loss accumulated.
         all_feature_dist (list): List of all feature error accumulated.
     """
+    total_params = sum(p.numel() for p in nfn.parameters())
+    print(f"Num params: {total_params}")
+
     nfn.to(device)
     optimizer = optimizer(nfn.parameters(), lr=learning_rate)
 

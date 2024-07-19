@@ -1,21 +1,26 @@
 import torch
 
 from zuko.distributions import DiagNormal
-from zuko.flows import CNF
+from zuko.flows.continuous import CNF, FFJTransform
 
 from tqdm import trange, tqdm
 
 def create_cnf(solution_dim,
                num_context,
-               hypernet_config):
+               hypernet_config,
+               type="cnf"):
     """Creates a continous normalizing flow network
     
     Args:
     Returns:
     """
-    flow = CNF(features=solution_dim,
-               context=num_context,
-               **hypernet_config)
+    flow = None
+    if type == "cnf":
+        flow = CNF(features=solution_dim,
+                   context=num_context,
+                   **hypernet_config)
+    elif type == "ffj":
+        pass
 
     return flow
 
@@ -26,6 +31,9 @@ def distill_archive_cnf(cnf,
                         optimizer,
                         learning_rate,
                         device):
+    total_params = sum(p.numel() for p in cnf.parameters())
+    print(f"Num params: {total_params}")
+
     cnf.to(device)
     optimizer = optimizer(cnf.parameters(), lr=learning_rate)
 
