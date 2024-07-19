@@ -1,26 +1,39 @@
 import torch
 
 from zuko.distributions import DiagNormal
-from zuko.flows.continuous import CNF, FFJTransform
+from zuko.flows.continuous import CNF, FFJTransform, UnconditionalDistribution
+from zuko.flows import Flow
 
 from tqdm import trange, tqdm
 
 def create_cnf(solution_dim,
+               sigma,
                num_context,
                hypernet_config,
                type="cnf"):
-    """Creates a continous normalizing flow network
-    
-    Args:
-    Returns:
-    """
     flow = None
     if type == "cnf":
         flow = CNF(features=solution_dim,
                    context=num_context,
                    **hypernet_config)
     elif type == "ffj":
-        pass
+        flow = Flow(
+            transform=[
+                FFJTransform(
+                    features=solution_dim,
+                    context=num_context,
+                    freqs=solution_dim+2,
+                    exact=False, # hopefully speeds up training
+                    **hypernet_config
+                )
+            ],
+            base=UnconditionalDistribution(
+                DiagNormal,
+                loc=torch.full((solution_dim, ), 0, dtype=torch.float32),
+                scale=torch.full((solution_dim, ), sigma, dtype=torch.float32),
+                buffer=True
+            )
+        )
 
     return flow
 

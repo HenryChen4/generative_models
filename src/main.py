@@ -40,11 +40,23 @@ def get_model_config(config_name):
         },
         "arm_10d_cnf": {
             "solution_dim": 10,
+            "sigma": None,
             "num_context": 3,
             "hypernet_config": {
                 "hidden_features": (1024, 1024, 1024),
                 "activation": nn.ELU
-            }
+            },
+            "type": "cnf"
+        },
+        "arm_10d_cnf_ffj": {
+            "solution_dim": 10,
+            "sigma": torch.pi/3,
+            "num_context": 3,
+            "hypernet_config": {
+                "hidden_features": (1024, 1024, 1024),
+                "activation": nn.ELU
+            },
+            "type": "ffj"
         }
     }
     return models[config_name]
