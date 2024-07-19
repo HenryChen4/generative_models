@@ -94,7 +94,7 @@ def main(domain_name,
                                                               learning_rate=learning_rate,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
     elif "cnf" in model_config_name:
-        all_epoch_loss, all_feature_err = distill_archive_cnf(nfn=archive_model,
+        all_epoch_loss, all_feature_err = distill_archive_cnf(cnf=archive_model,
                                                               train_loader=train_loader,
                                                               meas_obj_func=domain_config["obj_meas_func"],
                                                               num_iters=num_training_iters,
