@@ -26,6 +26,7 @@ def distill_archive_cnf(cnf,
                         optimizer,
                         learning_rate,
                         device):
+    print(device)
     cnf.to(device)
     optimizer = optimizer(cnf.parameters(), lr=learning_rate)
 
