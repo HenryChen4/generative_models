@@ -72,7 +72,7 @@ def sphere(solutions: torch.Tensor):
 # Config for the domains. All values should be JSON-compatible.
 DOMAIN_CONFIGS = {
     "arm_10d": {
-        "name": "arm_10d",
+        "domain_name": "arm_10d",
         "obj_meas_func": arm,
         "solution_dim": 10,
         "solution_bounds": [(-np.pi, np.pi)] * 10,
@@ -81,7 +81,7 @@ DOMAIN_CONFIGS = {
         "feature_high": [10, 10],
     },
     "arm_100d": {
-        "name": "arm_100d",
+        "domain_name": "arm_100d",
         "obj_meas_func": arm,
         "solution_dim": 100,
         "solution_bounds": [(-np.pi, np.pi)] * 100,
@@ -90,7 +90,7 @@ DOMAIN_CONFIGS = {
         "feature_high": [100, 100],
     },
     "sphere_100d": {
-        "name": "sphere_100d",
+        "domain_name": "sphere_100d",
         "obj_meas_func": sphere,
         "solution_dim": 100,
         "solution_bounds": None,

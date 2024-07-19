@@ -99,7 +99,7 @@ def distill_archive_nfn(nfn,
 
             # calculating l2 norm between features
             generated_solutions = nfn(original_context).sample().to(device)
-            generated_features, _ = meas_obj_func(generated_solutions.cpu().detach().numpy())
+            _, generated_features = meas_obj_func(generated_solutions)
             all_feature_dist = torch.norm(generated_features - original_features,
                                           p=2,
                                           dim=1)
@@ -110,11 +110,10 @@ def distill_archive_nfn(nfn,
             optimizer.zero_grad()
             batch_loss.backward()
             clip_value = 0.5 # anything > is risky
-            torch.nn.utils.clip_grad_value_(nfn.paramters(), clip_value)
+            torch.nn.utils.clip_grad_value_(nfn.parameters(), clip_value)
             optimizer.step()
         
-        print(f"epoch: {epoch}, loss: {epoch_loss/len(train_loader)},
-              feature err: {feature_dist/len(train_loader)}")
+        print(f"epoch: {epoch}, loss: {epoch_loss/len(train_loader)}, feature err: {feature_dist/len(train_loader)}")
         all_epoch_loss.append(epoch_loss/len(train_loader))
         all_feature_dist.append(feature_dist/len(train_loader))
     

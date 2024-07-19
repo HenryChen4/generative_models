@@ -45,14 +45,14 @@ def main(domain_name,
          model_config_name,
          train_batch_size,
          num_training_iters,
-         optimizer,
+         optimizer_name,
          learning_rate):
     # 1. gather solutions from archive
     print("> Gathering training samples")
     domain_config = DOMAIN_CONFIGS[domain_name]
     qd_config = get_qd_config(qd_config_name)
 
-    train_loader = gather_solutions(qd_config=qd_config_name,
+    train_loader = gather_solutions(qd_config=qd_config,
                                     train_batch_size=train_batch_size,
                                     **domain_config)
     print(f"> Successfully gathered ~{len(train_loader) * train_batch_size} training samples!")
@@ -67,12 +67,12 @@ def main(domain_name,
     
     # 3. train flow model
     optimizer = None
-    if optimizer is "adam":
+    if optimizer_name == "adam":
         optimizer = torch.optim.Adam
-    elif optimizer is "ranger":
+    elif optimizer_name == "ranger":
         optimizer = Ranger
     else:
-        print(f"{optimizer} is not yet implemented!")
+        print(f"{optimizer_name} is not yet implemented!")
 
     all_epoch_loss = []
     all_feature_err = []    
@@ -100,16 +100,16 @@ def main(domain_name,
     # save results and model
     save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
     os.makedirs(save_dir, exist_ok=True)
-    loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_dist.png')
-    model_save_path = os.path.join(save_dir, f'model_test.pth')
+    loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_err.png')
+    model_save_path = os.path.join(save_dir, f'model.pth')
 
     torch.save(archive_model, model_save_path)
 
-    plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="loss")
-    plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="dist")
+    plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="log loss")
+    plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="feature error")
     plt.legend()
     plt.savefig(loss_and_dist_save_path)
     plt.clf()
 
-if __name__ == "main":
-    fire.fire(main)
+if __name__ == "__main__":
+    fire.Fire(main)
