@@ -1,3 +1,5 @@
+"""Normalizing flow network from IKFlows paper"""
+
 import torch
 import numpy as np
 

@@ -1,3 +1,5 @@
+"""Continous normalizing flow network and free form jacobian transform"""
+
 import torch
 
 from zuko.distributions import DiagNormal

@@ -10,6 +10,7 @@ from ranger_adabelief import RangerAdaBelief as Ranger
 from src.data import gather_solutions
 from src.nfn_model import create_nfn, distill_archive_nfn
 from src.cnf_model import create_cnf, distill_archive_cnf
+from src.gan_model import create_gan, train_gan
 from src.domains import DOMAIN_CONFIGS, arm, sphere
 
 def get_qd_config(config_name):
@@ -67,6 +68,15 @@ def get_model_config(config_name):
                 "activation": nn.ELU
             },
             "type": "ffj"
+        },
+        "arm_10d_gan": {
+            "solution_dim": 10,
+            "noise_dim": 50,
+            "embedding_dim": 5,
+            "num_context": 3,
+            "hidden_features": (1024, 1024, 1024, 1024),
+            "activation": nn.ReLU,
+
         }
     }
     return models[config_name]
@@ -77,7 +87,9 @@ def main(domain_name,
          train_batch_size,
          num_training_iters,
          optimizer_name,
-         learning_rate):
+         learning_rate,
+         k=1,
+         n=1):
     # 1. gather solutions from archive
     print("> Gathering training samples")
     domain_config = DOMAIN_CONFIGS[domain_name]
@@ -91,62 +103,102 @@ def main(domain_name,
     # 2. create flow model
     algo_config = get_model_config(model_config_name)
     archive_model = None
+    critic = None
     if "nfn" in model_config_name:
         archive_model = create_nfn(**algo_config)
     elif "cnf" in model_config_name:
         archive_model = create_cnf(**algo_config)
-    
-    # 3. train flow model
-    optimizer = None
+    elif "gan" in model_config_name:
+        archive_model, critic = create_gan(**algo_config)
+
+    # 3. train archive model and save results
+    archive_model_optimizer = None
+    critic_optimizer = None
     if optimizer_name == "adam":
-        optimizer = torch.optim.Adam
+        archive_model_optimizer = torch.optim.Adam
+        critic_optimizer = torch.optim.Adam
     elif optimizer_name == "ranger":
-        optimizer = Ranger
+        archive_model_optimizer = Ranger
+        critic_optimizer = Ranger
     else:
         print(f"{optimizer_name} is not yet implemented!")
 
-    all_epoch_loss = []
-    all_feature_err = []    
     if "nfn" in model_config_name:
         all_epoch_loss, all_feature_err = distill_archive_nfn(nfn=archive_model,
                                                               train_loader=train_loader,
                                                               meas_obj_func=domain_config["obj_meas_func"],
                                                               num_iters=num_training_iters,
-                                                              optimizer=optimizer,
+                                                              optimizer=archive_model_optimizer,
                                                               learning_rate=learning_rate,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
+        cpu_epoch_loss = []
+        cpu_mean_dist = []
+
+        for i in all_epoch_loss:
+            cpu_epoch_loss.append(i)
+
+        for i in all_feature_err:
+            cpu_mean_dist.append(i.cpu().numpy())
+
+        # save results and model
+        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
+        os.makedirs(save_dir, exist_ok=True)
+        loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_err.png')
+        model_save_path = os.path.join(save_dir, f'model.pth')
+
+        torch.save(archive_model, model_save_path)
+
+        plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="log loss")
+        plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="feature error")
+        plt.legend()
+        plt.savefig(loss_and_dist_save_path)
+        plt.clf()
     elif "cnf" in model_config_name:
         all_epoch_loss, all_feature_err = distill_archive_cnf(cnf=archive_model,
                                                               train_loader=train_loader,
                                                               meas_obj_func=domain_config["obj_meas_func"],
                                                               num_iters=num_training_iters,
-                                                              optimizer=optimizer,
+                                                              optimizer=archive_model_optimizer,
                                                               learning_rate=learning_rate,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
+        cpu_epoch_loss = []
+        cpu_mean_dist = []
 
-    # 4. save results
-    cpu_epoch_loss = []
-    cpu_mean_dist = []
+        for i in all_epoch_loss:
+            cpu_epoch_loss.append(i)
 
-    for i in all_epoch_loss:
-        cpu_epoch_loss.append(i)
+        for i in all_feature_err:
+            cpu_mean_dist.append(i.cpu().numpy())
 
-    for i in all_feature_err:
-        cpu_mean_dist.append(i.cpu().numpy())
+        # save results and model
+        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
+        os.makedirs(save_dir, exist_ok=True)
+        loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_err.png')
+        model_save_path = os.path.join(save_dir, f'model.pth')
 
-    # save results and model
-    save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
-    os.makedirs(save_dir, exist_ok=True)
-    loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_err.png')
-    model_save_path = os.path.join(save_dir, f'model.pth')
+        torch.save(archive_model, model_save_path)
 
-    torch.save(archive_model, model_save_path)
-
-    plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="log loss")
-    plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="feature error")
-    plt.legend()
-    plt.savefig(loss_and_dist_save_path)
-    plt.clf()
+        plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="log loss")
+        plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="feature error")
+        plt.legend()
+        plt.savefig(loss_and_dist_save_path)
+        plt.clf()
+    elif "gan" in model_config_name:
+        all_epoch_loss, all_feature_err = train_gan(generator=archive_model,
+                                                    critic=critic,
+                                                    train_loader=train_loader,
+                                                    meas_obj_func=None,
+                                                    num_iters=num_training_iters,
+                                                    k=k,
+                                                    n=n,
+                                                    gen_optimizer=archive_model_optimizer,
+                                                    critic_optimizer=critic_optimizer,
+                                                    lr_g=learning_rate,
+                                                    lr_c=learning_rate,
+                                                    device=None)
+        
+    else:
+        print(f"Check {model_config_name} exists")
 
 if __name__ == "__main__":
     fire.Fire(main)

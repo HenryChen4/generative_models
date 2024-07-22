@@ -1,0 +1,193 @@
+"""Conditional generative adversarial network"""
+
+import torch
+import torch.nn as nn
+
+from tqdm import trange, tqdm
+
+class Generator(nn.Module):
+    def __init__(self, 
+                 solution_dim,
+                 noise_dim,
+                 embedding_dim,
+                 num_context, 
+                 hidden_features,
+                 activation):
+        """ Network transforms input with noise dim + embedding 
+        dim to output with solution dim.
+        """
+
+        super().__init__()
+        self.solution_dim = solution_dim
+        self.noise_dim = noise_dim
+
+        # embed conditional info
+        self.embedding_layer = nn.Linear(num_context, 
+                                         embedding_dim)
+
+        # generator model definition
+        self.layers = []
+
+        # input layer
+        self.layers.append(nn.Linear(noise_dim + embedding_dim,
+                                     hidden_features[0],
+                                     bias=False))
+        self.layers.append(activation())
+
+        # hidden layers
+        for i in range(len(hidden_features)-1):
+            self.layers.append(nn.Linear(hidden_features[0], 
+                                         hidden_features[0],
+                                         bias=False))
+            self.layers.append(nn.BatchNorm1d(hidden_features[0]))
+            self.layers.append(activation())
+
+        # output layer
+        self.layers.append(nn.Linear(hidden_features[0],
+                                     solution_dim,
+                                     bias=False))
+        self.model = nn.Sequential(*self.layers)
+    
+    def forward(self,
+                noise_sample, 
+                context):
+        # concat conditional info with overall input
+        embedded_context = self.embedding_layer(context)
+        generator_input = torch.cat((noise_sample, embedded_context), dim=1)
+
+        return self.model(generator_input)
+    
+class Critic(nn.Module):
+    def __init__(self, 
+                 solution_dim,
+                 embedding_dim,
+                 num_context, 
+                 hidden_features,
+                 activation):
+        """ Network takes a solution and its context and output probability
+        of it being a real sample.
+        """
+
+        super().__init__()
+        self.solution_dim = solution_dim
+        # embed conditional info
+        self.embedding_layer = nn.Linear(num_context, 
+                                         embedding_dim)
+
+        # generator model definition
+        self.layers = []
+
+        # input layer
+        self.layers.append(nn.Linear(solution_dim + embedding_dim,
+                                     hidden_features[0],
+                                     bias=False))
+        self.layers.append(activation())
+
+        # hidden layers
+        for i in range(len(hidden_features)-1):
+            self.layers.append(nn.Linear(hidden_features[0], 
+                                         hidden_features[0],
+                                         bias=False))
+            self.layers.append(nn.BatchNorm1d(hidden_features[0]))
+            self.layers.append(activation())
+
+        # output layer
+        self.layers.append(nn.Linear(hidden_features[0],
+                                     1,
+                                     bias=False))
+        self.layers.append(nn.Sigmoid())
+        self.model = nn.Sequential(*self.layers)
+
+    def forward(self, 
+                solution_sample,
+                context): 
+        # concat conditional info with overall input
+        embedded_context = self.embedding_layer(context)
+        generator_input = torch.cat((solution_sample, embedded_context), dim=1)
+
+        return self.model(generator_input)
+
+def create_gan(solution_dim,
+               noise_dim,
+               embedding_dim,
+               num_context,
+               hidden_features,
+               activation):
+    generator = Generator(solution_dim=solution_dim,
+                          noise_dim=noise_dim,
+                          embedding_dim=embedding_dim,
+                          num_context=num_context,
+                          hidden_features=hidden_features,
+                          activation=activation)
+    critic = Critic(solution_dim=solution_dim,
+                    embedding_dim=embedding_dim,
+                    num_context=num_context,
+                    hidden_features=hidden_features,
+                    activation=activation)
+    return generator, critic
+
+def train_gan(generator,
+              critic,
+              train_loader,
+              meas_obj_func,
+              num_iters,
+              k,
+              n,
+              gen_optimizer,
+              critic_optimizer,
+              lr_g,
+              lr_c,
+              device):
+    gen_optimizer = gen_optimizer(generator.parameters(), lr=lr_g)
+    critic_optimizer = critic_optimizer(critic.parameters(), lr=lr_c)
+
+    all_epoch_gen_loss = []
+    all_epoch_critic_loss = []
+    all_feature_err = []
+
+    for epoch in trange(num_iters):
+        for i, (data_tuple) in enumerate(tqdm(train_loader)):
+            batch_size = data_tuple[0].shape[0]
+
+            true_label = torch.ones((batch_size, 1))
+            gen_label = torch.zeros((batch_size, 1))
+
+            z = torch.rand(size=(batch_size, generator.noise_dim)) 
+
+            # ===== update critic k amount of times =====
+            for c in range(k): 
+                loss_func = nn.BCELoss()
+                # maximize log(d(x)) + log(1 - d(g(z))) --> you want to maximize ability to predict real data
+                critic.zero_grad()
+                # 1. sample true data 
+                real_prob = critic.forward(solution_sample=data_tuple[0],
+                                           context=data_tuple[1])
+                real_loss = loss_func(real_prob, true_label)
+                
+                # 2. sample fake data 
+                gen_data = generator.forward(noise_sample=z,
+                                             context=data_tuple[1])
+                gen_prob = critic.forward(solution_sample=gen_data,
+                                          context=data_tuple[1])
+                gen_loss = loss_func(gen_prob, gen_label)
+
+                # 3. compute loss and backpropagate thru critic
+                critic_loss = real_loss + gen_loss
+                critic_loss.backward()
+                critic_optimizer.step()
+
+            # ===== update generator n amount of time =====
+            for c in range(n):
+                loss_func = nn.BCELoss()
+                # minimize log(1 - D(g(z))) --> you want to minimize the critic's ability to predict real data
+                generator.zero_grad()
+                # 1. sample fake data
+                gen_data = generator.forward(noise_sample=z,
+                                             context=data_tuple[1])
+                gen_prob = critic.forward(solution_sample=gen_data,
+                                          context=data_tuple[1])
+                gen_loss = loss_func(gen_prob, true_label)
+
+                # 2. backpropagate thru generator
+                gen_loss.backward()
+                gen_optimizer.step()
