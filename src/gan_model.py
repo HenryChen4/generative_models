@@ -5,6 +5,11 @@ import torch.nn as nn
 
 from tqdm import trange, tqdm
 
+# TODO: Record the measurements **DONE
+# TODO: Attach everything to gpu 
+# TODO: Experiment with untrained embeddings
+# TODO: Experiement with no embeddings for context
+
 class Generator(nn.Module):
     def __init__(self, 
                  solution_dim,
@@ -138,21 +143,30 @@ def train_gan(generator,
               lr_g,
               lr_c,
               device):
+    total_params = sum(p.numel() for p in generator.parameters()) + sum(p.numel() for p in critic.parameters())
+    print(f"Num params: {total_params}")
+
+    generator.to(device)
+    critic.to(device)
+
     gen_optimizer = gen_optimizer(generator.parameters(), lr=lr_g)
     critic_optimizer = critic_optimizer(critic.parameters(), lr=lr_c)
 
-    all_epoch_gen_loss = []
     all_epoch_critic_loss = []
+    all_epoch_gen_loss = []
     all_feature_err = []
 
     for epoch in trange(num_iters):
+        mean_critic_loss = 0.
+        mean_gen_loss = 0.
+        mean_feature_err = 0.
         for i, (data_tuple) in enumerate(tqdm(train_loader)):
             batch_size = data_tuple[0].shape[0]
 
-            true_label = torch.ones((batch_size, 1))
-            gen_label = torch.zeros((batch_size, 1))
+            true_label = torch.ones((batch_size, 1)).to(device)
+            gen_label = torch.zeros((batch_size, 1)).to(device)
 
-            z = torch.rand(size=(batch_size, generator.noise_dim)) 
+            z = torch.rand(size=(batch_size, generator.noise_dim)).to(device)
 
             # ===== update critic k amount of times =====
             for c in range(k): 
@@ -173,6 +187,9 @@ def train_gan(generator,
 
                 # 3. compute loss and backpropagate thru critic
                 critic_loss = real_loss + gen_loss
+
+                mean_critic_loss += critic_loss.item()
+
                 critic_loss.backward()
                 critic_optimizer.step()
 
@@ -184,10 +201,27 @@ def train_gan(generator,
                 # 1. sample fake data
                 gen_data = generator.forward(noise_sample=z,
                                              context=data_tuple[1])
+                
+                # 1.5 recording feature error
+                original_features = data_tuple[1][:,:-1]
+                _, features = meas_obj_func(gen_data)
+                batched_feature_err = torch.norm(features.to(device) - original_features.to(device),
+                                                 p=2,
+                                                 dim=1)
+                mean_feature_err += batched_feature_err.mean().to(device)
+
                 gen_prob = critic.forward(solution_sample=gen_data,
                                           context=data_tuple[1])
                 gen_loss = loss_func(gen_prob, true_label)
 
+                mean_gen_loss += gen_loss.item()
+
                 # 2. backpropagate thru generator
                 gen_loss.backward()
                 gen_optimizer.step()
+            
+        all_epoch_critic_loss.append(mean_critic_loss/(k * len(train_loader)))
+        all_epoch_gen_loss.append(mean_gen_loss/(n * len(train_loader)))
+        all_feature_err.append(mean_feature_err/(n * len(train_loader)))
+    
+    return all_epoch_critic_loss, all_epoch_gen_loss, all_feature_err

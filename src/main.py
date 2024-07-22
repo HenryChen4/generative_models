@@ -100,7 +100,7 @@ def main(domain_name,
                                     **domain_config)
     print(f"> Successfully gathered ~{len(train_loader) * train_batch_size} training samples!")
 
-    # 2. create flow model
+    # 2. create generative model
     algo_config = get_model_config(model_config_name)
     archive_model = None
     critic = None
@@ -184,21 +184,42 @@ def main(domain_name,
         plt.savefig(loss_and_dist_save_path)
         plt.clf()
     elif "gan" in model_config_name:
-        all_epoch_loss, all_feature_err = train_gan(generator=archive_model,
-                                                    critic=critic,
-                                                    train_loader=train_loader,
-                                                    meas_obj_func=None,
-                                                    num_iters=num_training_iters,
-                                                    k=k,
-                                                    n=n,
-                                                    gen_optimizer=archive_model_optimizer,
-                                                    critic_optimizer=critic_optimizer,
-                                                    lr_g=learning_rate,
-                                                    lr_c=learning_rate,
-                                                    device=None)
-        
+        all_epoch_c_loss, all_epoch_g_loss, all_feature_err = train_gan(generator=archive_model,
+                                                                        critic=critic,
+                                                                        train_loader=train_loader,
+                                                                        meas_obj_func=domain_config["obj_meas_func"],
+                                                                        num_iters=num_training_iters,
+                                                                        k=k,
+                                                                        n=n,
+                                                                        gen_optimizer=archive_model_optimizer,
+                                                                        critic_optimizer=critic_optimizer,
+                                                                        lr_g=learning_rate,
+                                                                        lr_c=learning_rate,
+                                                                        device="cuda" if torch.cuda.is_available() else "cpu")
+        cpu_feature_err = []
+        for i in all_feature_err:
+            cpu_feature_err.append(i.cpu().numpy())
+            
+        # save results and model
+        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
+        os.makedirs(save_dir, exist_ok=True)
+        feature_err_save_path = os.path.join(save_dir, f'feature_err.png')
+        loss_save_path = os.path.join(save_dir, f'gan_loss.png')
+        model_save_path = os.path.join(save_dir, f'model.pth')
+
+        torch.save(archive_model, model_save_path)
+
+        plt.plot(np.arange(num_training_iters), cpu_feature_err, color="blue", label="feature error")
+        plt.legend()
+        plt.savefig(feature_err_save_path)
+        plt.clf()
+
+        plt.plot(np.arange(num_training_iters), all_epoch_c_loss, color="orange", label="critic loss")
+        plt.plot(np.arange(num_training_iters), all_epoch_g_loss, color="blue", label="generator loss")
+        plt.legend()
+        plt.savefig(loss_save_path)
+        plt.clf()
     else:
         print(f"Check {model_config_name} exists")
-
 if __name__ == "__main__":
     fire.Fire(main)
