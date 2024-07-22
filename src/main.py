@@ -72,7 +72,6 @@ def get_model_config(config_name):
         "arm_10d_gan": {
             "solution_dim": 10,
             "noise_dim": 50,
-            "embedding_dim": 5,
             "num_context": 3,
             "hidden_features": (1024, 1024, 1024, 1024),
             "activation": nn.ReLU,

@@ -5,16 +5,10 @@ import torch.nn as nn
 
 from tqdm import trange, tqdm
 
-# TODO: Record the measurements **DONE
-# TODO: Attach everything to gpu 
-# TODO: Experiment with untrained embeddings
-# TODO: Experiement with no embeddings for context
-
 class Generator(nn.Module):
     def __init__(self, 
                  solution_dim,
                  noise_dim,
-                 embedding_dim,
                  num_context, 
                  hidden_features,
                  activation):
@@ -26,15 +20,11 @@ class Generator(nn.Module):
         self.solution_dim = solution_dim
         self.noise_dim = noise_dim
 
-        # embed conditional info
-        self.embedding_layer = nn.Linear(num_context, 
-                                         embedding_dim)
-
         # generator model definition
         self.layers = []
 
         # input layer
-        self.layers.append(nn.Linear(noise_dim + embedding_dim,
+        self.layers.append(nn.Linear(noise_dim + num_context,
                                      hidden_features[0],
                                      bias=False))
         self.layers.append(activation())
@@ -57,15 +47,13 @@ class Generator(nn.Module):
                 noise_sample, 
                 context):
         # concat conditional info with overall input
-        embedded_context = self.embedding_layer(context)
-        generator_input = torch.cat((noise_sample, embedded_context), dim=1)
+        generator_input = torch.cat((noise_sample, context), dim=1)
 
         return self.model(generator_input)
     
 class Critic(nn.Module):
     def __init__(self, 
                  solution_dim,
-                 embedding_dim,
                  num_context, 
                  hidden_features,
                  activation):
@@ -75,15 +63,12 @@ class Critic(nn.Module):
 
         super().__init__()
         self.solution_dim = solution_dim
-        # embed conditional info
-        self.embedding_layer = nn.Linear(num_context, 
-                                         embedding_dim)
 
         # generator model definition
         self.layers = []
 
         # input layer
-        self.layers.append(nn.Linear(solution_dim + embedding_dim,
+        self.layers.append(nn.Linear(solution_dim + num_context,
                                      hidden_features[0],
                                      bias=False))
         self.layers.append(activation())
@@ -107,25 +92,21 @@ class Critic(nn.Module):
                 solution_sample,
                 context): 
         # concat conditional info with overall input
-        embedded_context = self.embedding_layer(context)
-        generator_input = torch.cat((solution_sample, embedded_context), dim=1)
+        generator_input = torch.cat((solution_sample, context), dim=1)
 
         return self.model(generator_input)
 
 def create_gan(solution_dim,
                noise_dim,
-               embedding_dim,
                num_context,
                hidden_features,
                activation):
     generator = Generator(solution_dim=solution_dim,
                           noise_dim=noise_dim,
-                          embedding_dim=embedding_dim,
                           num_context=num_context,
                           hidden_features=hidden_features,
                           activation=activation)
     critic = Critic(solution_dim=solution_dim,
-                    embedding_dim=embedding_dim,
                     num_context=num_context,
                     hidden_features=hidden_features,
                     activation=activation)
@@ -225,3 +206,4 @@ def train_gan(generator,
         all_feature_err.append(mean_feature_err/(n * len(train_loader)))
     
     return all_epoch_critic_loss, all_epoch_gen_loss, all_feature_err
+
