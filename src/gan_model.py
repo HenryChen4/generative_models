@@ -188,7 +188,7 @@ def train_gan(generator,
                 generator.zero_grad()
                 # 1. sample fake data
                 gen_data = generator.forward(noise_sample=z,
-                                             context=data_tuple[1])
+                                             context=data_tuple[1].to(device))
                 
                 # 1.5 recording feature error
                 original_features = data_tuple[1][:,:-1]
@@ -199,7 +199,7 @@ def train_gan(generator,
                 mean_feature_err += batched_feature_err.mean().to(device)
 
                 gen_prob = critic.forward(solution_sample=gen_data,
-                                          context=data_tuple[1])
+                                          context=data_tuple[1].to(device))
                 gen_loss = loss_func(gen_prob, true_label)
 
                 mean_gen_loss += gen_loss.item()
