@@ -11,7 +11,8 @@ class Generator(nn.Module):
                  noise_dim,
                  num_context, 
                  hidden_features,
-                 activation):
+                 activation,
+                 device):
         """ Network transforms input with noise dim + embedding 
         dim to output with solution dim.
         """
@@ -19,6 +20,7 @@ class Generator(nn.Module):
         super().__init__()
         self.solution_dim = solution_dim
         self.noise_dim = noise_dim
+        self.device = device
 
         # generator model definition
         self.layers = []
@@ -47,7 +49,7 @@ class Generator(nn.Module):
                 noise_sample, 
                 context):
         # concat conditional info with overall input
-        generator_input = torch.cat((noise_sample, context), dim=1)
+        generator_input = torch.cat((noise_sample, context), dim=1).to(self.device)
 
         return self.model(generator_input)
     
@@ -56,13 +58,15 @@ class Critic(nn.Module):
                  solution_dim,
                  num_context, 
                  hidden_features,
-                 activation):
+                 activation,
+                 device):
         """ Network takes a solution and its context and output probability
         of it being a real sample.
         """
 
         super().__init__()
         self.solution_dim = solution_dim
+        self.device = device
 
         # generator model definition
         self.layers = []
@@ -92,7 +96,7 @@ class Critic(nn.Module):
                 solution_sample,
                 context): 
         # concat conditional info with overall input
-        generator_input = torch.cat((solution_sample, context), dim=1)
+        generator_input = torch.cat((solution_sample, context), dim=1).to(self.device)
 
         return self.model(generator_input)
 
@@ -100,16 +104,19 @@ def create_gan(solution_dim,
                noise_dim,
                num_context,
                hidden_features,
-               activation):
+               activation,
+               device):
     generator = Generator(solution_dim=solution_dim,
                           noise_dim=noise_dim,
                           num_context=num_context,
                           hidden_features=hidden_features,
-                          activation=activation)
+                          activation=activation,
+                          device=device)
     critic = Critic(solution_dim=solution_dim,
                     num_context=num_context,
                     hidden_features=hidden_features,
-                    activation=activation)
+                    activation=activation,
+                    device=device)
     return generator, critic
 
 def train_gan(generator,
