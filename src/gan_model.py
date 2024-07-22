@@ -155,15 +155,15 @@ def train_gan(generator,
                 # maximize log(d(x)) + log(1 - d(g(z))) --> you want to maximize ability to predict real data
                 critic.zero_grad()
                 # 1. sample true data 
-                real_prob = critic.forward(solution_sample=data_tuple[0],
-                                           context=data_tuple[1])
+                real_prob = critic.forward(solution_sample=data_tuple[0].to(device),
+                                           context=data_tuple[1].to(device))
                 real_loss = loss_func(real_prob, true_label)
                 
                 # 2. sample fake data 
                 gen_data = generator.forward(noise_sample=z,
-                                             context=data_tuple[1])
+                                             context=data_tuple[1].to(device))
                 gen_prob = critic.forward(solution_sample=gen_data,
-                                          context=data_tuple[1])
+                                          context=data_tuple[1].to(device))
                 gen_loss = loss_func(gen_prob, gen_label)
 
                 # 3. compute loss and backpropagate thru critic
