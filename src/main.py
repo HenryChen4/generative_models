@@ -75,7 +75,7 @@ def get_model_config(config_name):
             "num_context": 3,
             "hidden_features": (1024, 1024, 1024, 1024),
             "activation": nn.ReLU,
-
+            "device": "cuda" if torch.cuda.is_available() else "cpu"
         }
     }
     return models[config_name]
