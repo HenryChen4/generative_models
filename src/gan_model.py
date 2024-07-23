@@ -197,7 +197,7 @@ def train_gan(generator,
                 # 1.5 recording feature error
                 original_features = data_tuple[1][:,:-1]
                 _, features = meas_obj_func(gen_data)
-                batched_feature_err = torch.norm(features.to(device) * max_meas - original_features.to(device),
+                batched_feature_err = torch.norm(features.to(device) - original_features.to(device),
                                                  p=2,
                                                  dim=1)
                 mean_feature_err += batched_feature_err.mean().to(device)
