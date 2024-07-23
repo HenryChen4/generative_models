@@ -5,6 +5,9 @@ import torch.nn as nn
 
 from tqdm import trange, tqdm
 
+# TODO: Clean up code
+# TODO: Normalize features to be between 0 and 1
+
 class Generator(nn.Module):
     def __init__(self, 
                  solution_dim,

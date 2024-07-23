@@ -71,7 +71,7 @@ def get_model_config(config_name):
         },
         "arm_10d_gan": {
             "solution_dim": 10,
-            "noise_dim": 50,
+            "noise_dim": 100,
             "num_context": 3,
             "hidden_features": (1024, 1024, 1024, 1024),
             "activation": nn.ReLU,
@@ -86,7 +86,8 @@ def main(domain_name,
          train_batch_size,
          num_training_iters,
          optimizer_name,
-         learning_rate,
+         lr_g,
+         lr_c,
          k=1,
          n=1):
     # 1. gather solutions from archive
@@ -128,7 +129,7 @@ def main(domain_name,
                                                               meas_obj_func=domain_config["obj_meas_func"],
                                                               num_iters=num_training_iters,
                                                               optimizer=archive_model_optimizer,
-                                                              learning_rate=learning_rate,
+                                                              learning_rate=lr_g,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
         cpu_epoch_loss = []
         cpu_mean_dist = []
@@ -158,7 +159,7 @@ def main(domain_name,
                                                               meas_obj_func=domain_config["obj_meas_func"],
                                                               num_iters=num_training_iters,
                                                               optimizer=archive_model_optimizer,
-                                                              learning_rate=learning_rate,
+                                                              learning_rate=lr_g,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
         cpu_epoch_loss = []
         cpu_mean_dist = []
@@ -192,12 +193,12 @@ def main(domain_name,
                                                                         n=n,
                                                                         gen_optimizer=archive_model_optimizer,
                                                                         critic_optimizer=critic_optimizer,
-                                                                        lr_g=learning_rate,
-                                                                        lr_c=learning_rate,
+                                                                        lr_g=lr_g,
+                                                                        lr_c=lr_c,
                                                                         device="cuda" if torch.cuda.is_available() else "cpu")
         cpu_feature_err = []
         for i in all_feature_err:
-            cpu_feature_err.append(i.cpu().numpy())
+            cpu_feature_err.append(i.detach().numpy())
             
         # save results and model
         save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/k:{k}_n:{n}/"
