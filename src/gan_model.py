@@ -208,7 +208,7 @@ def train_gan(generator,
                 gen_loss.backward()
                 gen_optimizer.step()
         
-        print(f"epoch: {epoch}, \n "
+        print(f"epoch: {epoch} \n"
               f"critic loss: {mean_critic_loss/(k * len(train_loader))} \n"
               f"generator loss: {mean_gen_loss/(n * len(train_loader))} \n"
               f"feature error: {mean_feature_err/(n * len(train_loader))}")
