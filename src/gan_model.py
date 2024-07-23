@@ -192,18 +192,18 @@ def train_gan(generator,
                 generator.zero_grad()
                 # 1. sample fake data
                 gen_data = generator.forward(noise_sample=z,
-                                             context=data_tuple[1].to(device))
+                                             context=data_tuple[1].to(device)/max_meas)
                 
                 # 1.5 recording feature error
                 original_features = data_tuple[1][:,:-1]
                 _, features = meas_obj_func(gen_data)
-                batched_feature_err = torch.norm(features.to(device) - original_features.to(device),
+                batched_feature_err = torch.norm(features.to(device) * max_meas - original_features.to(device),
                                                  p=2,
                                                  dim=1)
                 mean_feature_err += batched_feature_err.mean().to(device)
 
                 gen_prob = critic.forward(solution_sample=gen_data,
-                                          context=data_tuple[1].to(device))
+                                          context=data_tuple[1].to(device)/max_meas)
                 gen_loss = loss_func(gen_prob, true_label)
 
                 mean_gen_loss += gen_loss.item()
