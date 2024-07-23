@@ -79,7 +79,7 @@ def get_model_config(config_name):
         },
         "arm_10d_gan_150d_noise": {
             "solution_dim": 10,
-            "noise_dim": 50,
+            "noise_dim": 150,
             "num_context": 3,
             "hidden_features": (512, 512, 512),
             "activation": nn.ReLU,
