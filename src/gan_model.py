@@ -183,7 +183,7 @@ def train_gan(generator,
                 mean_critic_loss += critic_loss.item()
 
                 critic_loss.backward()
-                torch.nn.utils.clip_grad_value_(critic.parameters(), 0.5)
+                torch.nn.utils.clip_grad_value_(critic.parameters(), 0.3)
                 critic_optimizer.step()
 
             # ===== update generator n amount of time =====
@@ -211,7 +211,7 @@ def train_gan(generator,
 
                 # 2. backpropagate thru generator
                 gen_loss.backward()
-                torch.nn.utils.clip_grad_value_(generator.parameters(), 0.5)
+                torch.nn.utils.clip_grad_value_(generator.parameters(), 0.3)
                 gen_optimizer.step()
         
         print(f"epoch: {epoch} \n"
