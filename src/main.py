@@ -73,7 +73,7 @@ def get_model_config(config_name):
             "solution_dim": 10,
             "noise_dim": 100,
             "num_context": 3,
-            "hidden_features": (1024, 1024, 1024, 1024),
+            "hidden_features": (2048, 2048, 2048, 2048, 2048),
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         }
