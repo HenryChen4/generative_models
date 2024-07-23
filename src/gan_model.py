@@ -5,8 +5,7 @@ import torch.nn as nn
 
 from tqdm import trange, tqdm
 
-# TODO: Clean up code
-# TODO: Normalize features to be between 0 and 1
+# TODO: Rewrite the training code and ensure the loss function is correct
 
 class Generator(nn.Module):
     def __init__(self, 
@@ -46,6 +45,7 @@ class Generator(nn.Module):
         self.layers.append(nn.Linear(hidden_features[0],
                                      solution_dim,
                                      bias=False))
+        self.layers.append(nn.Tanh())
         self.model = nn.Sequential(*self.layers)
     
     def forward(self,
@@ -168,6 +168,7 @@ def train_gan(generator,
                 # 1. sample true data 
                 real_prob = critic.forward(solution_sample=data_tuple[0].to(device),
                                            context=data_tuple[1].to(device)/max_meas)
+                # -log(d(x))
                 real_loss = loss_func(real_prob, true_label)
                 
                 # 2. sample fake data 
@@ -175,10 +176,11 @@ def train_gan(generator,
                                              context=data_tuple[1].to(device)/max_meas)
                 gen_prob = critic.forward(solution_sample=gen_data,
                                           context=data_tuple[1].to(device)/max_meas)
+                # log(d(g(z)))
                 gen_loss = loss_func(gen_prob, gen_label)
 
                 # 3. compute loss and backpropagate thru critic
-                critic_loss = -(real_loss + gen_loss)
+                critic_loss = real_loss + gen_loss
 
                 mean_critic_loss += critic_loss.item()
 
@@ -204,7 +206,8 @@ def train_gan(generator,
 
                 gen_prob = critic.forward(solution_sample=gen_data,
                                           context=data_tuple[1].to(device)/max_meas)
-                gen_loss = loss_func(gen_prob, gen_label)
+                # -log(d(g(z)))
+                gen_loss = loss_func(gen_prob, true_label)
 
                 mean_gen_loss += gen_loss.item()
 
@@ -223,3 +226,56 @@ def train_gan(generator,
     
     return all_epoch_critic_loss, all_epoch_gen_loss, all_feature_err
 
+def distill_archive_gan(generator,
+                        critic,
+                        train_loader,
+                        meas_obj_func,
+                        max_meas,
+                        num_iters,
+                        k,
+                        n,
+                        gen_optimizer,
+                        critic_optimizer,
+                        lr_g,
+                        lr_c,
+                        device):
+    loss_func = nn.BCELoss()
+
+    gen_optimizer = gen_optimizer(generator.parameters(), lr=lr_g)
+    critic_optimizer = critic_optimizer(critic.parameters(), lr=lr_c)
+
+    for epoch in trange(num_iters):
+        for i, (data_tuple) in enumerate(tqdm(train_loader)):
+            solution_sample = data_tuple[0]
+            scaled_context = data_tuple[1]/max_meas
+
+            batch_size = data_tuple[0].shape[0]
+
+            real_label = torch.ones((batch_size, 1)).to(device)
+            fake_label = torch.zeros((batch_size, 1)).to(device)
+
+            # sample random noise
+            z = torch.rand(size=(batch_size, generator.noise_dim)).to(device)
+
+            # ===== update critic =====
+            critic.zero_grad()
+            
+            # probability real sample is real
+            real_prob = critic.forward(solution_sample=solution_sample,
+                                       context=scaled_context)
+            real_loss = loss_func(real_prob, real_label)
+
+            # probability fake sample is fake
+            fake_sample = generator.forward(noise_sample=z,
+                                            context=scaled_context)
+            fake_prob = critic.forward(solution_sample=fake_sample,
+                                       context=scaled_context)
+            fake_loss = loss_func(fake_prob, fake_label)
+
+            # combine loss and backprop thru critic
+            critic_loss = real_loss + fake_loss
+
+            critic_loss.backward()
+            critic_optimizer.step()
+
+            # ===== update generator ======
