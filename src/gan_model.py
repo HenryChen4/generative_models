@@ -6,6 +6,7 @@ import torch.nn as nn
 from tqdm import trange, tqdm
 
 # TODO: Rewrite the training code and ensure the loss function is correct
+# TODO: Write a training threshold loop
 
 class Generator(nn.Module):
     def __init__(self, 

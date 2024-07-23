@@ -77,30 +77,14 @@ def get_model_config(config_name):
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
-        "arm_10d_gan_200d_noise": {
-            "solution_dim": 10,
-            "noise_dim": 200,
-            "num_context": 3,
-            "hidden_features": (1024, 1024, 1024),
-            "activation": nn.ReLU,
-            "device": "cuda" if torch.cuda.is_available() else "cpu"
-        },
-        "arm_10d_gan_smaller": {
+        "arm_10d_gan_50d_noise": {
             "solution_dim": 10,
             "noise_dim": 50,
             "num_context": 3,
-            "hidden_features": (256, 256, 256),
+            "hidden_features": (512, 512, 512),
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
-        "arm_10d_gan_long": {
-            "solution_dim": 10,
-            "noise_dim": 150,
-            "num_context": 3,
-            "hidden_features": (1024, 1024, 1024),
-            "activation": nn.LeakyReLU,
-            "device": "cuda" if torch.cuda.is_available() else "cpu" 
-        }
     }
     return models[config_name]
 
