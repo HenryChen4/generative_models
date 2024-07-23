@@ -200,7 +200,7 @@ def main(domain_name,
             cpu_feature_err.append(i.cpu().numpy())
             
         # save results and model
-        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/{f"k:{k}_n:{n}"}"
+        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/k:{k}_n:{n}/"
         os.makedirs(save_dir, exist_ok=True)
         feature_err_save_path = os.path.join(save_dir, f'feature_err.png')
         loss_save_path = os.path.join(save_dir, f'gan_loss.png')
