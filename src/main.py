@@ -198,7 +198,7 @@ def main(domain_name,
                                                                         device="cuda" if torch.cuda.is_available() else "cpu")
         cpu_feature_err = []
         for i in all_feature_err:
-            cpu_feature_err.append(i.detach().numpy())
+            cpu_feature_err.append(i.cpu().detach().numpy())
             
         # save results and model
         save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/k:{k}_n:{n}/"
