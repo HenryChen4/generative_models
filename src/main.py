@@ -100,9 +100,6 @@ def main(domain_name,
                                     **domain_config)
     print(f"> Successfully gathered ~{len(train_loader) * train_batch_size} training samples!")
 
-    for (data_tuple) in train_loader:
-        print(data_tuple)
-
     # 2. create generative model
     algo_config = get_model_config(model_config_name)
     archive_model = None
