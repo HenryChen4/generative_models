@@ -73,7 +73,7 @@ def get_model_config(config_name):
             "solution_dim": 10,
             "noise_dim": 100,
             "num_context": 3,
-            "hidden_features": (2048, 2048, 2048, 2048, 2048),
+            "hidden_features": (512, 512, 512),
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         }
@@ -99,6 +99,9 @@ def main(domain_name,
                                     train_batch_size=train_batch_size,
                                     **domain_config)
     print(f"> Successfully gathered ~{len(train_loader) * train_batch_size} training samples!")
+
+    for (data_tuple) in train_loader:
+        print(data_tuple)
 
     # 2. create generative model
     algo_config = get_model_config(model_config_name)

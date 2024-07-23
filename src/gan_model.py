@@ -126,6 +126,7 @@ def train_gan(generator,
               critic,
               train_loader,
               meas_obj_func,
+              max_meas,
               num_iters,
               k,
               n,
@@ -166,14 +167,14 @@ def train_gan(generator,
                 critic.zero_grad()
                 # 1. sample true data 
                 real_prob = critic.forward(solution_sample=data_tuple[0].to(device),
-                                           context=data_tuple[1].to(device))
+                                           context=data_tuple[1].to(device)/max_meas)
                 real_loss = loss_func(real_prob, true_label)
                 
                 # 2. sample fake data 
                 gen_data = generator.forward(noise_sample=z,
-                                             context=data_tuple[1].to(device))
+                                             context=data_tuple[1].to(device)/max_meas)
                 gen_prob = critic.forward(solution_sample=gen_data,
-                                          context=data_tuple[1].to(device))
+                                          context=data_tuple[1].to(device)/max_meas)
                 gen_loss = loss_func(gen_prob, gen_label)
 
                 # 3. compute loss and backpropagate thru critic
