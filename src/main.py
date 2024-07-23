@@ -71,7 +71,7 @@ def get_model_config(config_name):
         },
         "arm_10d_gan": {
             "solution_dim": 10,
-            "noise_dim": 100,
+            "noise_dim": 150,
             "num_context": 3,
             "hidden_features": (1024, 1024, 1024),
             "activation": nn.ReLU,
@@ -202,7 +202,7 @@ def main(domain_name,
             cpu_feature_err.append(i.cpu().detach().numpy())
             
         # save results and model
-        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/k:{k}_n:{n}/"
+        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/"
         os.makedirs(save_dir, exist_ok=True)
         feature_err_save_path = os.path.join(save_dir, f'feature_err.png')
         loss_save_path = os.path.join(save_dir, f'gan_loss.png')
