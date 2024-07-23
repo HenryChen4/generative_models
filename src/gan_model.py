@@ -178,7 +178,7 @@ def train_gan(generator,
                 gen_loss = loss_func(gen_prob, gen_label)
 
                 # 3. compute loss and backpropagate thru critic
-                critic_loss = real_loss + gen_loss
+                critic_loss = -(real_loss + gen_loss)
 
                 mean_critic_loss += critic_loss.item()
 
