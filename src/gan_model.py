@@ -208,7 +208,7 @@ def train_gan(generator,
                 gen_prob = critic.forward(solution_sample=gen_data,
                                           context=data_tuple[1].to(device)/max_meas)
                 # log(d(g(z)))
-                gen_loss = -loss_func(gen_prob, true_label)
+                gen_loss = loss_func(gen_prob, true_label)
 
                 mean_gen_loss += gen_loss.item()
 

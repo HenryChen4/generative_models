@@ -77,7 +77,7 @@ def get_model_config(config_name):
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
-        "arm_10d_gan_50d_noise": {
+        "arm_10d_gan_150d_noise": {
             "solution_dim": 10,
             "noise_dim": 50,
             "num_context": 3,
