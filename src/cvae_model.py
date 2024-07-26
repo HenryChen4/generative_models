@@ -249,8 +249,8 @@ def train_cvae(cvae,
 
             epoch_loss += loss.item()
 
-            del solution_sample
-            del context_sample
+            del solution_sample, context_sample, mu, log_var, decoded, features, batched_feature_err
+            torch.cuda.empty_cache()
 
         all_epoch_loss.append(epoch_loss/len(train_loader))
         all_feature_error.append(feature_error/len(train_loader))
