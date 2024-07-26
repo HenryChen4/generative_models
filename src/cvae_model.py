@@ -245,6 +245,8 @@ def train_cvae(cvae,
             loss = criterion(decoded, solution_sample) + KLD
             batch_loss += loss
 
+            del decoded
+
         batch_loss = batch_loss.mean()
         optimizer.zero_grad()
         batch_loss.backward()
@@ -256,6 +258,8 @@ def train_cvae(cvae,
         print(f"epoch: {epoch} \n"
               f"loss: {epoch_loss/len(train_loader)} \n"
               f"feature error: {feature_error/len(train_loader)}")
+        
+        del batch_loss
     return all_epoch_loss, all_feature_error
 
 # === for testing only ===
