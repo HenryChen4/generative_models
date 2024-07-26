@@ -88,7 +88,7 @@ def get_model_config(config_name):
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
-        "arm_10d_cvae": {
+        "arm_10d_cvae_v1": {
             "solution_dim": 10,
             "latent_dim": 8,
             "context_dim": 3,
@@ -102,6 +102,58 @@ def get_model_config(config_name):
             },
             "context_config": {
                 "hidden_layers": [32, 32],
+                "activation": nn.ReLU,
+            },
+            "mu_config": {
+                "hidden_layers": [64, 64],
+                "activation": nn.ReLU,
+            },
+            "log_var_config": {
+                "hidden_layers": [64, 64],
+                "activation": nn.ReLU,
+            },
+            "device": "cuda" if torch.cuda.is_available() else "cpu"
+        },
+        "arm_10d_cvae_v2": {
+            "solution_dim": 10,
+            "latent_dim": 100,
+            "context_dim": 3,
+            "encoding_config": {
+                "hidden_layers": [1024, 1024, 1024],
+                "activation": nn.LeakyReLU,
+            },
+            "decoding_config": {
+                "hidden_layers": [1024, 1024, 1024],
+                "activation": nn.LeakyReLU,
+            },
+            "context_config": {
+                "hidden_layers": [64, 64],
+                "activation": nn.ReLU,
+            },
+            "mu_config": {
+                "hidden_layers": [64, 64, 64],
+                "activation": nn.ReLU,
+            },
+            "log_var_config": {
+                "hidden_layers": [64, 64, 64],
+                "activation": nn.ReLU,
+            },
+            "device": "cuda" if torch.cuda.is_available() else "cpu"
+        },
+        "arm_10d_cvae_v3": {
+            "solution_dim": 10,
+            "latent_dim": 5,
+            "context_dim": 3,
+            "encoding_config": {
+                "hidden_layers": [256, 256],
+                "activation": nn.ReLU,
+            },
+            "decoding_config": {
+                "hidden_layers": [256, 256, 256],
+                "activation": nn.ReLU,
+            },
+            "context_config": {
+                "hidden_layers": [16, 16],
                 "activation": nn.ReLU,
             },
             "mu_config": {
@@ -200,7 +252,7 @@ def main(domain_name,
                                                      optimizer=archive_model_optimizer,
                                                      learning_rate=lr_g,
                                                      device="cuda" if torch.cuda.is_available() else "cpu")
-
+        
         cpu_feature_err = []
         for err in all_feature_err:
             cpu_feature_err.append(err.cpu().detach().numpy())
