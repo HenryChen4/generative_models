@@ -166,6 +166,32 @@ def get_model_config(config_name):
             },
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
+        "arm_10d_cvae_v10": {
+            "solution_dim": 10,
+            "latent_dim": 8,
+            "context_dim": 3,
+            "encoding_config": {
+                "hidden_layers": [1024, 1024, 1024, 1024],
+                "activation": nn.ReLU,
+            },
+            "decoding_config": {
+                "hidden_layers": [1024, 1024, 1024, 1024],
+                "activation": nn.ReLU,
+            },
+            "context_config": {
+                "hidden_layers": [64, 64],
+                "activation": nn.ReLU,
+            },
+            "mu_config": {
+                "hidden_layers": [64, 64, 64],
+                "activation": nn.ReLU,
+            },
+            "log_var_config": {
+                "hidden_layers": [64, 64, 64],
+                "activation": nn.ReLU,
+            },
+            "device": "cuda" if torch.cuda.is_available() else "cpu"
+        },
         "arm_100d_cvae_v1": {
             "solution_dim": 100,
             "latent_dim": 50,
