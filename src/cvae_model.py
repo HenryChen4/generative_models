@@ -249,6 +249,7 @@ def train_cvae(cvae,
 
             epoch_loss += loss.item()
 
+            del loss, decoded
             torch.cuda.empty_cache()
 
         all_epoch_loss.append(epoch_loss/len(train_loader))
