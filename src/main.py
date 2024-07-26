@@ -8,10 +8,13 @@ import matplotlib.pyplot as plt
 from ranger_adabelief import RangerAdaBelief as Ranger
 
 from src.data import gather_solutions
+from src.domains import DOMAIN_CONFIGS, arm, sphere
+from src.visualize import visualize
+
 from src.nfn_model import create_nfn, distill_archive_nfn
 from src.cnf_model import create_cnf, distill_archive_cnf
 from src.gan_model import create_gan, train_gan
-from src.domains import DOMAIN_CONFIGS, arm, sphere
+from src.cvae_model import create_cvae, train_cvae
 
 def get_qd_config(config_name):
     # names correspond to roughly number of samples
@@ -85,6 +88,32 @@ def get_model_config(config_name):
             "activation": nn.ReLU,
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
+        "arm_10d_cvae": {
+            "solution_dim": 10,
+            "latent_dim": 8,
+            "context_dim": 3,
+            "encoding_config": {
+                "hidden_layers": [512, 512, 512],
+                "activation": nn.ReLU,
+            },
+            "decoding_config": {
+                "hidden_layers": [512, 512, 512],
+                "activation": nn.ReLU,
+            },
+            "context_config": {
+                "hidden_layers": [32, 32],
+                "activation": nn.ReLU,
+            },
+            "mu_config": {
+                "hidden_layers": [64, 64],
+                "activation": nn.ReLU,
+            },
+            "log_var_config": {
+                "hidden_layers": [64, 64],
+                "activation": nn.ReLU,
+            },
+            "device": "cuda" if torch.cuda.is_available() else "cpu"
+        }
     }
     return models[config_name]
 
@@ -94,8 +123,8 @@ def main(domain_name,
          train_batch_size,
          num_training_iters,
          optimizer_name,
-         lr_g,
-         lr_c,
+         lr_g=5e-4,
+         lr_c=5e-4,
          k=1,
          n=1):
     # 1. gather solutions from archive
@@ -109,15 +138,17 @@ def main(domain_name,
     print(f"> Successfully gathered ~{len(train_loader) * train_batch_size} training samples!")
 
     # 2. create generative model
-    algo_config = get_model_config(model_config_name)
+    model_config = get_model_config(model_config_name)
     archive_model = None
     critic = None
     if "nfn" in model_config_name:
-        archive_model = create_nfn(**algo_config)
+        archive_model = create_nfn(**model_config)
     elif "cnf" in model_config_name:
-        archive_model = create_cnf(**algo_config)
+        archive_model = create_cnf(**model_config)
     elif "gan" in model_config_name:
-        archive_model, critic = create_gan(**algo_config)
+        archive_model, critic = create_gan(**model_config)
+    elif "cvae" in model_config_name:
+        archive_model = create_cvae(**model_config)
 
     # 3. train archive model and save results
     archive_model_optimizer = None
@@ -139,28 +170,6 @@ def main(domain_name,
                                                               optimizer=archive_model_optimizer,
                                                               learning_rate=lr_g,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
-        cpu_epoch_loss = []
-        cpu_mean_dist = []
-
-        for i in all_epoch_loss:
-            cpu_epoch_loss.append(i)
-
-        for i in all_feature_err:
-            cpu_mean_dist.append(i.cpu().numpy())
-
-        # save results and model
-        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
-        os.makedirs(save_dir, exist_ok=True)
-        loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_err.png')
-        model_save_path = os.path.join(save_dir, f'model.pth')
-
-        torch.save(archive_model, model_save_path)
-
-        plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="log loss")
-        plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="feature error")
-        plt.legend()
-        plt.savefig(loss_and_dist_save_path)
-        plt.clf()
     elif "cnf" in model_config_name:
         all_epoch_loss, all_feature_err = distill_archive_cnf(cnf=archive_model,
                                                               train_loader=train_loader,
@@ -169,28 +178,6 @@ def main(domain_name,
                                                               optimizer=archive_model_optimizer,
                                                               learning_rate=lr_g,
                                                               device="cuda" if torch.cuda.is_available() else "cpu")
-        cpu_epoch_loss = []
-        cpu_mean_dist = []
-
-        for i in all_epoch_loss:
-            cpu_epoch_loss.append(i)
-
-        for i in all_feature_err:
-            cpu_mean_dist.append(i.cpu().numpy())
-
-        # save results and model
-        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
-        os.makedirs(save_dir, exist_ok=True)
-        loss_and_dist_save_path = os.path.join(save_dir, f'loss_and_err.png')
-        model_save_path = os.path.join(save_dir, f'model.pth')
-
-        torch.save(archive_model, model_save_path)
-
-        plt.plot(np.arange(num_training_iters), cpu_epoch_loss, color="green", label="log loss")
-        plt.plot(np.arange(num_training_iters), cpu_mean_dist, color="blue", label="feature error")
-        plt.legend()
-        plt.savefig(loss_and_dist_save_path)
-        plt.clf()
     elif "gan" in model_config_name:
         all_epoch_c_loss, all_epoch_g_loss, all_feature_err = train_gan(generator=archive_model,
                                                                         critic=critic,
@@ -205,30 +192,74 @@ def main(domain_name,
                                                                         lr_g=lr_g,
                                                                         lr_c=lr_c,
                                                                         device="cuda" if torch.cuda.is_available() else "cpu")
+    elif "cvae" in model_config_name:
+        all_epoch_loss, all_feature_err = train_cvae(cvae=archive_model,
+                                                     train_loader=train_loader,
+                                                     meas_obj_func=domain_config["obj_meas_func"],
+                                                     num_iters=num_training_iters,
+                                                     optimizer=archive_model_optimizer,
+                                                     learning_rate=lr_g,
+                                                     device="cuda" if torch.cuda.is_available() else "cpu")
+
         cpu_feature_err = []
-        for i in all_feature_err:
-            cpu_feature_err.append(i.cpu().detach().numpy())
-            
-        # save results and model
-        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}/"
+        for err in all_feature_err:
+            cpu_feature_err.append(err.cpu().detach().numpy())
+        
+        save_dir = f"results/archive_distill/{domain_name}/{model_config_name}"
         os.makedirs(save_dir, exist_ok=True)
-        feature_err_save_path = os.path.join(save_dir, f'feature_err.png')
-        loss_save_path = os.path.join(save_dir, f'gan_loss.png')
-        model_save_path = os.path.join(save_dir, f'model.pth')
+        loss_save_path = os.path.join(save_dir, f"loss.png")
+        error_save_path = os.path.join(save_dir, f"feature_error.png")
+        model_save_path = os.path.join(save_dir, f"model.pth")
 
         torch.save(archive_model, model_save_path)
 
-        plt.plot(np.arange(num_training_iters), cpu_feature_err, color="blue", label="feature error")
-        plt.legend()
-        plt.savefig(feature_err_save_path)
-        plt.clf()
+        plt.plot(np.arange(num_training_iters), )
 
-        plt.plot(np.arange(num_training_iters), all_epoch_c_loss, color="orange", label="critic loss")
-        plt.plot(np.arange(num_training_iters), all_epoch_g_loss, color="blue", label="generator loss")
-        plt.legend()
-        plt.savefig(loss_save_path)
-        plt.clf()
+    # elif "cvae" in model_config_name:
+    #     all_epoch_loss = dummy_train(autoencoder=archive_model,
+    #                                  train_loader=train_loader,
+    #                                  num_iters=num_training_iters,
+    #                                  optimizer=archive_model_optimizer,
+    #                                  learning_rate=lr_g,
+    #                                  device=None)
+    #     # visualizing original arms
+    #     og_arms = next(iter(train_loader))[0]
+
+    #     print(og_arms)
+
+    #     _, context = domain_config["obj_meas_func"](og_arms[:10])
+    #     link_lengths = np.ones(shape=(len(og_arms), ))
+    #     objectives = np.ones(shape=(len(og_arms), ))
+    #     _, ax = plt.subplots()
+    #     visualize(solutions=og_arms[:10],
+    #               link_lengths=link_lengths,
+    #               objectives=objectives,
+    #               ax=ax,
+    #               context=context)
+    #     plt.show()
+
+    #     # visualizing encoded and decoded arms
+    #     _, decoded_arms = archive_model(og_arms)
+
+    #     print(decoded_arms)
+
+    #     _, context = domain_config["obj_meas_func"](decoded_arms[:10])
+    #     link_lengths = np.ones(shape=(len(decoded_arms.detach().numpy()), ))
+    #     objectives = np.ones(shape=(len(decoded_arms.detach().numpy()), ))
+    #     _, ax = plt.subplots()
+    #     visualize(solutions=decoded_arms.detach().numpy()[:10],
+    #               link_lengths=link_lengths,
+    #               objectives=objectives,
+    #               ax=ax,
+    #               context=context.detach().numpy())
+    #     plt.show()
+
     else:
         print(f"Check {model_config_name} exists")
+
 if __name__ == "__main__":
     fire.Fire(main)
+
+# TODO: FINISH VISUALIZING ARMS B4 and AFTER ENCODING DECODING ** DONE
+# TODO: WRITE CONDITIONAL VAE ** DONE
+# TODO: EVALUATE PERFORMANCE WITH HEATMAP AND MORE MEASUREMENTS
