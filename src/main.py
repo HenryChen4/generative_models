@@ -183,11 +183,11 @@ def get_model_config(config_name):
                 "activation": nn.ReLU,
             },
             "mu_config": {
-                "hidden_layers": [32, 32, 32],
+                "hidden_layers": [128, 128],
                 "activation": nn.ReLU,
             },
             "log_var_config": {
-                "hidden_layers": [32, 32, 32],
+                "hidden_layers": [128, 128],
                 "activation": nn.ReLU,
             },
             "device": "cuda" if torch.cuda.is_available() else "cpu"
