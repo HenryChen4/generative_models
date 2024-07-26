@@ -248,6 +248,10 @@ def train_cvae(cvae,
             optimizer.step()
 
             epoch_loss += loss.item()
+
+            del solution_sample
+            del context_sample
+
         all_epoch_loss.append(epoch_loss/len(train_loader))
         all_feature_error.append(feature_error/len(train_loader))
         print(f"epoch: {epoch} \n"
