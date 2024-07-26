@@ -250,12 +250,13 @@ def train_cvae(cvae,
         batch_loss.backward()
         optimizer.step()
 
-        epoch_loss += loss.item()
-        all_epoch_loss.append(epoch_loss/len(train_loader))
+        all_epoch_loss.append(batch_loss)
         all_feature_error.append(feature_error/len(train_loader))
         print(f"epoch: {epoch} \n"
               f"loss: {epoch_loss/len(train_loader)} \n"
               f"feature error: {feature_error/len(train_loader)}")
+        
+        del batch_loss
         
     return all_epoch_loss, all_feature_error
 
