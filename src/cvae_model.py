@@ -223,7 +223,6 @@ def train_cvae(cvae,
     for epoch in trange(num_iters):
         epoch_loss = 0.
         feature_error = 0.
-        batch_loss = 0.
         for i, (data_tuple) in tqdm(enumerate(train_loader)):
             solution_sample = data_tuple[0].to(device)
             context_sample = data_tuple[1].to(device)
@@ -243,21 +242,17 @@ def train_cvae(cvae,
 
             criterion = nn.MSELoss()
             loss = criterion(decoded, solution_sample) + KLD
-            batch_loss += loss
 
-        batch_loss = batch_loss.mean()
-        optimizer.zero_grad()
-        batch_loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        all_epoch_loss.append(batch_loss)
+            epoch_loss += loss.item()
+        all_epoch_loss.append(epoch_loss/len(train_loader))
         all_feature_error.append(feature_error/len(train_loader))
         print(f"epoch: {epoch} \n"
               f"loss: {epoch_loss/len(train_loader)} \n"
               f"feature error: {feature_error/len(train_loader)}")
-        
-        del batch_loss
-        
     return all_epoch_loss, all_feature_error
 
 # === for testing only ===
