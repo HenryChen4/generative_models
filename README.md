@@ -15,5 +15,5 @@ python -m src.main --domain_name=arm_10d --qd_config_name=112k --model_config_na
 
 python -m src.main --domain_name=arm_10d --qd_config_name=112k --model_config_name=arm_10d_gan_100d_noise --train_batch_size=20000 --num_training_iters=1000 --optimizer-name=adam --lr_g=5e-4 --lr_c=5e-4 --k=1 --n=1
 
-python -m src.main --domain_name=arm_10d --qd_config_name=112k --model_config_name=arm_10d_vae --train_batch_size=64 --num_training_iters=100 --optimizer-name=adam --lr_g=1e-4
+python -m src.main --domain_name=arm_10d --qd_config_name=112k --model_config_name=arm_10d_cvae --train_batch_size=5000 --num_training_iters=100 --optimizer-name=adam --lr_g=1e-4
 ```

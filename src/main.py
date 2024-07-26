@@ -213,7 +213,13 @@ def main(domain_name,
 
         torch.save(archive_model, model_save_path)
 
-        plt.plot(np.arange(num_training_iters), )
+        plt.plot(np.arange(num_training_iters), all_epoch_loss, color="blue", label="loss")
+        plt.savefig(loss_save_path)
+        plt.clf()
+
+        plt.plot(np.arange(num_training_iters), cpu_feature_err, color="blue", label="feature error")
+        plt.savefig(error_save_path)
+        plt.clf()
 
     # elif "cvae" in model_config_name:
     #     all_epoch_loss = dummy_train(autoencoder=archive_model,
