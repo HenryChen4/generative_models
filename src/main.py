@@ -180,15 +180,15 @@ def get_model_config(config_name):
             },
             "context_config": {
                 "hidden_layers": [64, 64],
-                "activation": nn.LeakyReLU,
+                "activation": nn.ReLU,
             },
             "mu_config": {
-                "hidden_layers": [64, 64, 64],
-                "activation": nn.LeakyReLU,
+                "hidden_layers": [32, 32, 32],
+                "activation": nn.ReLU,
             },
             "log_var_config": {
-                "hidden_layers": [64, 64, 64],
-                "activation": nn.LeakyReLU,
+                "hidden_layers": [32, 32, 32],
+                "activation": nn.ReLU,
             },
             "device": "cuda" if torch.cuda.is_available() else "cpu"
         },
