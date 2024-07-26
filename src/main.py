@@ -168,7 +168,7 @@ def get_model_config(config_name):
         },
         "arm_10d_cvae_v10": {
             "solution_dim": 10,
-            "latent_dim": 30,
+            "latent_dim": 500,
             "context_dim": 3,
             "encoding_config": {
                 "hidden_layers": [1024, 1024, 1024, 1024],
