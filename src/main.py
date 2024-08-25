@@ -90,14 +90,14 @@ def get_model_config(config_name):
         },
         "arm_10d_cvae_v8": {
             "solution_dim": 10,
-            "latent_dim": 100,
+            "latent_dim": 5,
             "context_dim": 3,
             "encoding_config": {
-                "hidden_layers": [1024, 1024, 1024],
+                "hidden_layers": [512, 512, 512],
                 "activation": nn.LeakyReLU,
             },
             "decoding_config": {
-                "hidden_layers": [1024, 1024, 1024],
+                "hidden_layers": [512, 512, 512],
                 "activation": nn.LeakyReLU,
             },
             "context_config": {
