@@ -1,4 +1,9 @@
 Refactored from normalizing flow net. Code was getting too messy.
+Implemented:
+- normalizing flow
+- continous normalizing flow
+- conditional GAN
+- conditional VAE
 
 Installation:
 
