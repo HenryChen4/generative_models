@@ -93,11 +93,11 @@ def get_model_config(config_name):
             "latent_dim": 5,
             "context_dim": 3,
             "encoding_config": {
-                "hidden_layers": [512, 512, 512],
+                "hidden_layers": [1024, 1024, 1024],
                 "activation": nn.LeakyReLU,
             },
             "decoding_config": {
-                "hidden_layers": [512, 512, 512],
+                "hidden_layers": [1024, 1024, 1024],
                 "activation": nn.LeakyReLU,
             },
             "context_config": {
