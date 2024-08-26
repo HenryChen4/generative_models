@@ -28,5 +28,7 @@ python -m src.main --domain_name=arm_10d --qd_config_name=112k --model_config_na
 
 python -m src.main --domain_name=sphere_100d --qd_config_name=112k --model_config_name=sphere_100d_cvae_v10 --train_batch_size=4096 --num_training_iters=5000 --optimizer-name=adam --lr_g=1e-4
 
-python -m src.main --domain_name=arm_10d --qd_config_name=112k --model_config_name=arm_10d_cvae_v8 --train_batch_size=4096 --num_training_iters=5000 --optimizer-name=adam --lr_g=1e-4
+python -m src.main --domain_name=arm_10d --qd_config_name=more_samples --model_config_name=arm_10d_cvae_v8 --train_batch_size=4096 --num_training_iters=5000 --optimizer-name=adam --lr_g=1e-4
+
+python -m src.main --domain_name=arm_100d --qd_config_name=692k --model_config_name=arm_100d_cvae_v1 --train_batch_size=9192 --num_training_iters=5000 --optimizer-name=adam --lr_g=1e-4
 ```

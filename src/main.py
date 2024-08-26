@@ -26,7 +26,7 @@ def get_qd_config(config_name):
             "num_emitters": 5,
             "num_qd_iters": 700
         },
-        "more_samples": {
+        "692k": {
             "grid_cells": (500, 500),
             "sigma0": 0.1,
             "batch_size": 30,
@@ -201,26 +201,26 @@ def get_model_config(config_name):
         },
         "arm_100d_cvae_v1": {
             "solution_dim": 100,
-            "latent_dim": 50,
+            "latent_dim": 80,
             "context_dim": 3,
             "encoding_config": {
-                "hidden_layers": [2048, 2048, 2048, 2048],
+                "hidden_layers": [1024, 1024, 1024, 1024],
                 "activation": nn.ReLU,
             },
             "decoding_config": {
-                "hidden_layers": [2048, 2048, 2048, 2048],
+                "hidden_layers": [1024, 1024, 1024, 1024],
                 "activation": nn.ReLU,
             },
             "context_config": {
-                "hidden_layers": [256, 256],
+                "hidden_layers": [128, 128],
                 "activation": nn.ReLU,
             },
             "mu_config": {
-                "hidden_layers": [256, 256, 256],
+                "hidden_layers": [128, 128, 128],
                 "activation": nn.ReLU,
             },
             "log_var_config": {
-                "hidden_layers": [256, 256, 256],
+                "hidden_layers": [128, 128, 128],
                 "activation": nn.ReLU,
             },
             "device": "cuda" if torch.cuda.is_available() else "cpu"
