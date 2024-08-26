@@ -25,6 +25,13 @@ def get_qd_config(config_name):
             "batch_size": 30,
             "num_emitters": 5,
             "num_qd_iters": 700
+        },
+        "more_samples": {
+            "grid_cells": (500, 500),
+            "sigma0": 0.1,
+            "batch_size": 30,
+            "num_emitters": 5,
+            "num_qd_iters": 3500
         }
     }
     return qd_configs[config_name]
