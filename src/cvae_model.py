@@ -140,7 +140,7 @@ class ConditionalVAE(nn.Module):
     def condition(self,
                   latent,
                   context,
-                  offset=10):
+                  offset=100):
         return latent + (offset * self.context_mlp(context))
 
     def reparameterize(self, 
